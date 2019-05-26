@@ -7,6 +7,7 @@ to come.
 """
 
 import random
+import threading
 
 """
 A console progress bar taken from: https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
@@ -54,12 +55,15 @@ class Planet_Sector:
                 self.metal_resource_count = 0
                 self.rock_resource_count  = 0
                 self.water_resource_count = 100
+        
 
 """
 Intended to manage the planet object
 """
+THREAD_COUNT = 10
+
 class Planet:
-    
+
     def __init__(self):
         self.atmosphere_radius   = 0
         self.atmosphere_volume   = 0
@@ -69,6 +73,20 @@ class Planet:
         self.planet_surface_area = 0
         self.sectors             = None
         self.initialized         = False
+        self.lock                = threading.Lock()
+        
+    def add_sector(self,thread,num_to_create,total_sectors):
+        for i in range(num_to_create):
+            #print("Thread %d -- Creating Sector!" % thread)
+            new_sector = Planet_Sector()
+            #print("Thread %d -- Creating Sector ... DONE!" % thread)
+            self.lock.acquire()
+            #print("Thread %d -- Lock Acquired!" % thread)
+            self.sectors.append(new_sector)
+            printProgressBar(len(self.sectors),total_sectors)
+            self.lock.release()
+            #print("Thread %d -- Lock Released!" % thread)
+        
         
     def initialize_random(self):
         #ATMOSPHERE SETUP START
@@ -92,9 +110,13 @@ class Planet:
         #SECTOR SETUP START
         total_sectors = int(self.planet_surface_area / 10) #Each sector represents 10x10 km
         self.sectors  = []
-        for i in range(total_sectors):                     #TODO: Thread this out -- takes waaay too long atm
-            printProgressBar(i,total_sectors)
-            self.sectors.append(Planet_Sector())
+        for i in range(0,total_sectors,THREAD_COUNT):                     #TODO: Thread this out -- takes waaay too long atm
+            threads = [0 for k in range(THREAD_COUNT)]
+            for j in range(THREAD_COUNT):
+                threads[j] = threading.Thread(target=self.add_sector,args=(j,int(total_sectors / THREAD_COUNT), total_sectors, ))
+                threads[j].start()
+            for j in range(THREAD_COUNT):
+                threads[j].join()
         #SECTOR SETUP END
         
         
