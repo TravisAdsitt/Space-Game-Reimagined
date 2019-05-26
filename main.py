@@ -76,16 +76,18 @@ class Planet:
         self.lock                = threading.Lock()
         
     def add_sector(self,thread,num_to_create,total_sectors):
+        new_sectors = [0 for i in range(num_to_create)]
         for i in range(num_to_create):
             #print("Thread %d -- Creating Sector!" % thread)
-            new_sector = Planet_Sector()
-            #print("Thread %d -- Creating Sector ... DONE!" % thread)
-            self.lock.acquire()
-            #print("Thread %d -- Lock Acquired!" % thread)
-            self.sectors.append(new_sector)
-            printProgressBar(len(self.sectors),total_sectors)
-            self.lock.release()
-            #print("Thread %d -- Lock Released!" % thread)
+            new_sectors[i] = Planet_Sector()
+        #print("Thread %d -- Creating Sector ... DONE!" % thread)
+        self.lock.acquire()
+        #print("Thread %d -- Lock Acquired!" % thread)
+        self.sectors.extend(new_sectors)
+        printProgressBar(len(self.sectors),total_sectors)
+            
+        self.lock.release()
+        #print("Thread %d -- Lock Released!" % thread)
         
         
     def initialize_random(self):
